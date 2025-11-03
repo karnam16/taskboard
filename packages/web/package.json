@@ -1,0 +1,38 @@
+{
+  "name": "@taskboard/web",
+  "version": "1.0.0",
+  "description": "Taskboard web client",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "format": "prettier --write \"src/**/*.{js,jsx}\"",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^6.21.1",
+    "@tanstack/react-query": "^5.17.9",
+    "axios": "^1.6.5",
+    "socket.io-client": "^4.6.0",
+    "@hello-pangea/dnd": "^16.5.0",
+    "react-hot-toast": "^2.4.1",
+    "date-fns": "^3.0.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.11",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "daisyui": "^4.6.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.1.1",
+    "@playwright/test": "^1.40.1"
+  }
+}

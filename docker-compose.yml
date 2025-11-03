@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: taskboard-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: taskboard
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - taskboard-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskboard-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - taskboard-network
+
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+      target: development
+    container_name: taskboard-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      MONGODB_URI: mongodb://admin:admin123@mongo:27017/taskboard?authSource=admin
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: dev-access-secret-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./packages/api:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - taskboard-network
+
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile
+      target: development
+    container_name: taskboard-web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+      VITE_WS_URL: http://localhost:3000
+      VITE_FEATURE_REALTIME: false
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./packages/web:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - taskboard-network
+
+volumes:
+  mongo-data:
+
+networks:
+  taskboard-network:
+    driver: bridge
