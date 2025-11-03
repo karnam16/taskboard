@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  api-test:
+    name: API Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: admin123
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/api/package-lock.json
+
+      - name: Install API dependencies
+        working-directory: packages/api
+        run: npm ci
+
+      - name: Lint API
+        working-directory: packages/api
+        run: npm run lint
+
+      - name: Test API
+        working-directory: packages/api
+        run: npm test
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://admin:admin123@localhost:27017/taskboard_test?authSource=admin
+          REDIS_URL: redis://localhost:6379
+          JWT_ACCESS_SECRET: test-secret
+          JWT_REFRESH_SECRET: test-secret
+
+  web-build:
+    name: Web Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/web/package-lock.json
+
+      - name: Install Web dependencies
+        working-directory: packages/web
+        run: npm ci
+
+      - name: Lint Web
+        working-directory: packages/web
+        run: npm run lint
+
+      - name: Build Web
+        working-directory: packages/web
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:3000/api
+          VITE_WS_URL: http://localhost:3000
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-build
+          path: packages/web/dist
